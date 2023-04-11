@@ -1,0 +1,11 @@
+# Ignored directories
+data/test/*
+data/train/*
+images/*
+
+!data/test/test.txt
+!data/train/train.txt
+!images/images.txt
+
+# Ignored files
+.DS_Store
