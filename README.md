@@ -25,10 +25,10 @@ Next up I will have to consider expanding the training dataset, since it's missi
 That's as far as my goals stretch so far. Another goal I can consider is putting the model up on my portfolio website, as a web accessible breed identifier. And some more things like streamlining the notebooks, creating a new iteration of IdentiBreed that's from the ground up mine etc.
 
 So to sum up the goals (present and future):
-✅ Create the first iteration of IdentiBreed
-◽️ Prepare model to make predictions on user submitted pictures
-◽️ Put the model and all obligatory functions into a windowed app
-◽️ Expand the training dataset with missing dog breeds
-◽️ Make the model web accessible
-◽️ Streamline the notebooks
-◽️ Rebuild the model from ground up (no TensorFlow Hub)
+<br /> ✅ Create the first iteration of IdentiBreed
+<br /> ◽️ Prepare model to make predictions on user submitted pictures
+<br /> ◽️ Put the model and all obligatory functions into a windowed app
+<br /> ◽️ Expand the training dataset with missing dog breeds
+<br /> ◽️ Make the model web accessible
+<br /> ◽️ Streamline the notebooks
+<br /> ◽️ Rebuild the model from ground up (no TensorFlow Hub)
