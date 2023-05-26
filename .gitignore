@@ -1,11 +1,15 @@
 # Ignored directories
 data/test/*
 data/train/*
-images/*
+data/user_submissions/*
+user/input/*
+user/output/*
 
 !data/test/test.txt
 !data/train/train.txt
-!images/images.txt
+!data/user_submissions/user_submissions.txt
+!user/input/input.txt
+!user/output/output.txt
 
 # Ignored files
 .DS_Store

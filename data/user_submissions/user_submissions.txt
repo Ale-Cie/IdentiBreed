@@ -1,0 +1,1 @@
+At the current stage this is where the breed-labeled images for database extension would be saved.
