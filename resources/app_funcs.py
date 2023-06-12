@@ -66,9 +66,9 @@ def image_saver(image, breed_label, accuracy= None, data_expansion= False, prefi
         - data_expansion: True if we want to save images as future dataset expansion submissions
         - prefix: string if we want to mark user submitted breed for future reference
 
-    It saves the image either into './user/output' if data_expansion is False or './data/user_submissions' if data_expansion is Truefolder.
+    It saves the image either into './user/output' if data_expansion is False or './data/user_submissions' if data_expansion is True.
 
-    Returns nothing.
+    When it is saving the predicted images to the './user/output' it returns a label_string that gets displayed in the navigation frame.
     """
     # We get the current time in order to add as a suffix to the file name
     date = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -101,24 +101,15 @@ def image_saver(image, breed_label, accuracy= None, data_expansion= False, prefi
 
 def open_directory(directory_name):
     """
-    This function ask the user if they want a folder opened for them.
-    If they say yes, function opens a specified folder within './user/' directory in a new window.
+    This simple function serves as a command to two different buttons.
+    If either of the buttons is pressed a specified folder within './user/' directory opens in a new window.
     """
 
-    # open_loop = True
-
-    # while open_loop:
-    #     open_folder = input(f"Would you like me to open {directory_name}? [Y/N]").lower()
-    # if open_folder == "y":
     try:
         subprocess.run(["start", f"./user/{directory_name}"])
     except:
         subprocess.run(["open", f"./user/{directory_name}"])
-    #   open_loop = False
-    # elif open_folder == 'n':
-    #   open_loop = False 
-    # else:
-    #   print("Error, please try again!")
+
 
 def data_expander(image_path, breed_label, unique_labels):
     """
@@ -223,7 +214,8 @@ def data_expander(image_path, breed_label, unique_labels):
 
 def show_user_images(predicted_files, figure, axes, idx=0):
     """
-    This function takes a path to input images and goes through predicting, plotting to saving images.
+    This function takes the predicted_files (as return by 'predict_user_images()') a matplotlib figure and axes.
+    Optionally you can give it an idx, but really this is more of a mandatory argument if you want to see more than just the first prediction
     """
 
     # Here we go plotting results of the prediction.
@@ -242,7 +234,6 @@ def show_user_images(predicted_files, figure, axes, idx=0):
     ax1.set_title(f"I am {prediction_dict['accuracy']}% sure it's a {breed_label}", fontdict={"fontsize": 6})
     ax1.set_yticks([])
     ax1.set_xticks([])
-    # ax1.figure.set_size_inches(2, 1)
     ax2.bar(
         x=np.arange(len(prediction_dict["top_5_labels"])),
         height= prediction_dict["top_5_confidences"],
@@ -253,19 +244,15 @@ def show_user_images(predicted_files, figure, axes, idx=0):
     labels=[]
     for label in prediction_dict["top_5_labels"]:
         labels.append(label.replace("_", "\n"))
-    # print(labels)
     ax2.tick_params(axis="y", labelsize= 6)
     ax2.set_xticks(
         np.arange(len(prediction_dict["top_5_labels"])),
         labels= labels,
-        # rotation="vertical",
         fontsize= 4
     )
-    # ax2.figure.set_size_inches(2, 1)
     bars = ax2.containers[0]
     ax2.bar_label(bars, labels = [f'{x.get_height():.3%}' for x in bars], fontsize= 5)
 
-    # plt.show()
     return figure, prediction_dict["prediction"], prediction_dict["accuracy"]
 
     
