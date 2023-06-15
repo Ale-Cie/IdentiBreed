@@ -255,8 +255,30 @@ def show_user_images(predicted_files, figure, axes, idx=0):
 
     return figure, prediction_dict["prediction"], prediction_dict["accuracy"]
 
+def save_buttons_state(save_buttons, save_method):
+    if save_method == "n/a":
+        for button in save_buttons:
+            button.state(["!disabled"])
+    else:
+        for button in save_buttons:
+            button.state(["disabled"])
     
+def save_button_command(save_method, method, button_list, prediction_frame, navigation_frame):
+    save_method.set(method) 
+    save_buttons_state(button_list, save_method.get())
+    prediction_frame.display(prediction_frame.predicted_list, save_method.get()), 
+    navigation_frame.activate(prediction_frame.label_string, save_method.get(), len(prediction_frame.predicted_list))
 
+def predict_button_command(save_method, prediction_frame, unique_labels, model, button_list, navigation_frame):
+    save_method.set("n/a")
+    prediction_frame.prediction("./user/input", unique_labels, model)
+    save_buttons_state(button_list, save_method.get())
+    navigation_frame.deactivate()
     
-    
+def manual_save(image, breed_label, accuracy, idx, manually_saved_idxs, manually_saved_texts, text_label, save_button):
+    label_string = image_saver(image, breed_label, accuracy)
+    manually_saved_idxs.append(idx)
+    manually_saved_texts[idx] = label_string
+    text_label["text"] = label_string
+    save_button.state(["disabled"])
     

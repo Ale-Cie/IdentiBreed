@@ -22,7 +22,13 @@ I set out to create a model using a network imported from TensorFlow Hub. I deci
 
 Inital model has been completed a long time ago (some time in April) and then I set out to expand on the project.
 
-<i>-- 12.06.2023 --</i>
+<i>-- 15.06.2023 version 0.1.1 --</i>
+
+Minor update - reworked the prediction saving system. Now after making predictions on the image files - before displaying the predictions - you have to decide whether you want all images saved, none saved or if you want to pick them manually. Then if you want to make new predictions the save system resets and you have to choose again how you want saving handled.
+
+Next in line - making some change to the input system (maybe something akin to a droppable image or picking a direct path to the image) and working on rescaling the predicted image and the UI, since it looks funny on 4K screens...
+
+<i>-- 12.06.2023 version 0.1.0 --</i>
 
 Since the last update I focused on creating a windowed version of the app using the `tkinter` module. Now, if you run the `IdentiBreed.py` file within an active Conda env (please use the `dl-env.yml` to recreate the environment) you're greeted to a simple, rather user-friendly window.
 
@@ -32,7 +38,7 @@ Under the banner you will see three divisions that you can interact with! Let me
 - `Predict Breeds` - Just one button here, before you click it make sure you've decided whether you want your images saved or not since you won't be able to change it later. As you click "Make Predictions", you let IdentiBreed do what it's best at - predicting dog breeds from images. The banner will change to a figure containing a labeled image and top 5 predicted labels.
 - `Navigation Controls` - Once IdentiBreed's made predictions on your images you will get access to those controls. The counter will display which image out how many it is showing, and the buttons "< Previous" and "Next >" will take you through all of your predictions! Easy as that!
 
-<i>-- 26.05.2023 -- </i>
+<i>-- 26.05.2023 Initial .ipynb files --</i>
 
 The repostiory was updated with this new notebook `Identifyin_User_Images.ipynb` and two files containing functions defined so far - `model_funcs.py` and `user_funcs.py`. Now the user can give model their images, see what breeds the model thinks are present in these images and if they want save those outputs for them. Alongside these the images are saved (currently locally) in 'user_submissions' directory within './data/' with the correct breed as label. This in future will allow me to gather those images and use them for retraining the network.
 
