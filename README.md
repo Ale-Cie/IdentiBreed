@@ -6,7 +6,17 @@
 
 This here repository represents a project I started doing during an online course. Upon finishing said course I decided to expand and further work on this model.
 
-In simple words - if you've got a picture of a dog, this should be able to recognize it! As long as it's breed is within the 120 ones given by Kaggle, but will get onto that in a bit...
+In simple words - if you've got a picture of a dog, this should be able to recognize it! As long as it's breed is within the 120 ones given by Kaggle, but I will get onto that in a bit...
+
+## Requirements
+
+So far only two, I'm sure of only the OS and not entirely as well...
+
+- A screen resolution of at least 1440x900 (It will work on smaller resolutions, but there are no means of scrolling right now)
+- Currently supported operating systems:
+  - 🍎 MacOS - ✅ - the app works swimmingly on the M1 macs, on M2 probably as well. Not sure about the intel ones, the user might need to install some packages. I will try to test it in the future...
+  - 🪟 Windows - ⛔️ - next in line for testing but not working yet. Might require some changes to the code and certainly a creation of its very own `dl-env.yml` file
+  - 🐧 Linux - ❓ - I mean it's Unix but I bet it won't work as supposed to... I've got no way to check it though sadly. At least for now.
 
 ## Background
 
@@ -21,6 +31,21 @@ I set out to create a model using a network imported from TensorFlow Hub. I deci
 ## What's already happened?
 
 Inital model has been completed a long time ago (some time in April) and then I set out to expand on the project.
+
+<i>-- 18.06.2023 version 0.2.0 --</i>
+
+Can I call this version 0.2.0? I mean it's my own project and I guess I can do what I want...
+
+This is a rather major of minor updates as it tackles a few things:
+
+- I reworked the input sources! Now users can use the original input folder provided by the app, they can select a specific directory or file where the images are or they can paste a URL to an image.
+- I reworked the saving system AGAIN. This time I moved the buttons to their own designated `LabelFrame` widget and moved the `Output Folder` button here as well. Now you can access the saved images from this place, which frankly makes more sense than storing this button in the input section...
+- I updated the `dl-env.yml` file with a new package that helps us to...
+- ... resize the plot! Yes, I made the plot resize according to the resolution of the user's screen
+- I made sure to provide a rather high dpi for the prediction figure, which makes it readable after saving on larger resolutions
+- I cleaned up the code, provided docstrings to all functions and methods created so far
+
+Now there's nothing left to do but work on asking the user for evaluation and expanding the database...
 
 <i>-- 15.06.2023 version 0.1.1 --</i>
 

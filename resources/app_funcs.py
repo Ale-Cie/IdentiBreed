@@ -11,6 +11,8 @@ from resources import model_funcs
 
 from IPython.display import Image
 from PIL import Image
+from tkinter import ttk
+from urllib.request import urlopen
 
 
 def predict_user_images(file_paths, unique_labels, model):
@@ -20,11 +22,12 @@ def predict_user_images(file_paths, unique_labels, model):
     The function creates a list of dictionaries for each image. 
     These dictionaries contain the image tensor, predicted breed, model's confidence, four other probable breeds and their confidences.
 
-    Returns list of image paths and list of image dictionaries. 
+    Returns list of image paths, list of image dictionaries and a folder_state string. 
     """
 
     # Instantiating empty lists for image paths and image dictionaries
     dir_list, predicted_files = [], []
+    folder_state = "empty"
     print("Predicting dog breeds from images in './images' folder.")
     print("This could take a moment...")
 
@@ -52,12 +55,13 @@ def predict_user_images(file_paths, unique_labels, model):
             # We append the dictionary to the list and an image file path into another list
             predicted_files.append(pred_dict)
             dir_list.append(img_path)
+            folder_state = "filled"
         except:
             pass
         # return_list = [dir_list, predicted_files]
     print("Predicting completed")
     # return return_list
-    return dir_list, predicted_files
+    return dir_list, predicted_files, folder_state
 
 def image_saver(image, breed_label, accuracy= None, data_expansion= False, prefix= None):
     """
@@ -96,7 +100,7 @@ def image_saver(image, breed_label, accuracy= None, data_expansion= False, prefi
     else:
         prediction_date = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         filename = f"{breed_label}_{accuracy}%_{prediction_date}.jpg"
-        image.savefig(f"./user/output/{filename}", bbox_inches= "tight")
+        image.savefig(f"./user/output/{filename}", bbox_inches= "tight", dpi=900)
         return f"Prediction saved to output folder under name: {filename}'"
 
 def open_directory(directory_name):
@@ -212,24 +216,29 @@ def data_expander(image_path, breed_label, unique_labels):
         else:
             print("Error, please try again.")
 
-def show_user_images(predicted_files, figure, axes, idx=0):
+def show_user_images(predicted_files, figure, axes, width_multiplier=1, height_multiplier=1, idx=0):
     """
     This function takes the predicted_files (as return by 'predict_user_images()') a matplotlib figure and axes.
-    Optionally you can give it an idx, but really this is more of a mandatory argument if you want to see more than just the first prediction
+    Optionally you can give it both width and height multipliers and an idx, but really this is more of a mandatory argument
+    if you want to see more than just the first prediction.
     """
 
+    # Let's start by resizing the figure, so that it looks good on different resolutions.
+    plot_width = 5 * width_multiplier
+    plot_height = 2.5 * height_multiplier
+    
     # Here we go plotting results of the prediction.
-    # We create a new figure with two subaxes for each prediction, which we can later easily save
+    # We use the figure and axes provided by the user to display predictions
     # On the left of the figure we will be plotting a resized image with a title of 'I am X% sure it's a PREDICTION'
     # On the right we will plot a bar graph containing top five predictions
-    
     figure, axes
-    figure.set_figheight(2.5)
-    figure.set_figwidth(5)
+    figure.set_figwidth(plot_width)
+    figure.set_figheight(plot_height)
     figure.tight_layout()
     prediction_dict = predicted_files[idx]
     ax1, ax2 = axes[0], axes[1]
     ax1.imshow(prediction_dict["image"])
+    # For a nicer look we replace the '_' in the breed label with a space
     breed_label = prediction_dict['prediction'].replace("_", " ")
     ax1.set_title(f"I am {prediction_dict['accuracy']}% sure it's a {breed_label}", fontdict={"fontsize": 6})
     ax1.set_yticks([])
@@ -241,6 +250,9 @@ def show_user_images(predicted_files, figure, axes, idx=0):
 
     )
     ax2.set_title("Top 5 probable breeds", fontdict={"fontsize": 6})
+    # Here we create an empty list, which will contain the top 5 predictions. 
+    # We then take those labels and replace the '_' with a line brake. 
+    # This way the xticks will look better on the final plot
     labels=[]
     for label in prediction_dict["top_5_labels"]:
         labels.append(label.replace("_", "\n"))
@@ -255,7 +267,11 @@ def show_user_images(predicted_files, figure, axes, idx=0):
 
     return figure, prediction_dict["prediction"], prediction_dict["accuracy"]
 
-def save_buttons_state(save_buttons, save_method):
+def save_buttons_state(save_buttons, save_method=""):
+    """
+    This function takes a list of save buttons and a save_method argument. If the save_method is specified it enables the 
+    save buttons, otherwise they stay disabled.
+    """
     if save_method == "n/a":
         for button in save_buttons:
             button.state(["!disabled"])
@@ -263,19 +279,125 @@ def save_buttons_state(save_buttons, save_method):
         for button in save_buttons:
             button.state(["disabled"])
     
-def save_button_command(save_method, method, button_list, prediction_frame, navigation_frame):
+def save_button_command(save_method, method, width_multiplier, height_multiplier, button_list, prediction_frame, navigation_frame, predict_label):
+    """
+    This function takes a long list of arguments, we will discuss them shortly. It is a function that is performed, when
+    one of the save buttons is pressed. The outcome changes depending on which button has been pressed.
+    
+    Arguments:
+     - save_method - a 'StringVar()' object which value is about to be decide by user
+     - method - a string that is linked to the save button pressed by the user
+     - width_multiplier
+     - height_multiplier
+     - button_list - the list of all the save buttons that are available in the app
+     - prediction_frame - a PredictionImage object that will display the predictions
+     - navigation_frame - a NavigationFrame object which will be used to move through the predictions. If the method is 
+        saved as manual it will also contain the 'save button'
+     - predict_label - a tk Label widget which will inform the user that it is ready to make new predictions
+
+    This function sets the saving method, disables the save buttons, makes the 'prediction_frame' display first of the
+    predictions and activates the 'navigation_bar'. Finally it informs the user that if they wish they can pick a new
+    directory, image etc. to make fresh predictions.
+    """
     save_method.set(method) 
     save_buttons_state(button_list, save_method.get())
-    prediction_frame.display(prediction_frame.predicted_list, save_method.get()), 
-    navigation_frame.activate(prediction_frame.label_string, save_method.get(), len(prediction_frame.predicted_list))
+    prediction_frame.display(prediction_frame.predicted_list, save_method.get(), width_multiplier, height_multiplier), 
+    navigation_frame.activate(save_method.get(), width_multiplier, height_multiplier, len(prediction_frame.predicted_list), prediction_frame.label_string)
+    predict_label["text"] = "Ready to make new predictions!"
 
-def predict_button_command(save_method, prediction_frame, unique_labels, model, button_list, navigation_frame):
+def predict_button_command(input_source_frame, save_method, prediction_frame, unique_labels, model, predict_label, button_list, navigation_frame):
+    """
+    This function takes a long list of arguments, we will discuss them shortly. It is a function that is performed, when the
+    'predict_button' is pressed.
+    
+    Arguments:
+     - input_source_frame - a frame containing the tk Notebook widget with different methods of providing images
+     - save_method - a 'StringVar()' variable
+     - prediction_frame - a 'PredictionImage' object that will display the predictions
+     - unique_labels - list of all breeds available
+     - model - the model which will make the predictions
+     - predict_label - a tk Label that will change it's value depending on the folder state or links viability 
+     - button_list - a list of save buttons
+     - navigation_frame - a NavigationFrame object
+
+    This function checks which input method has been selected, checks whether there are images to make predictions on
+    and if all goes right makes predictions and activates the save buttons. 
+    """
     save_method.set("n/a")
-    prediction_frame.prediction("./user/input", unique_labels, model)
-    save_buttons_state(button_list, save_method.get())
-    navigation_frame.deactivate()
+    input_source = input_source_frame.notebook.tab(input_source_frame.notebook.select(), "text")
+    if input_source.lower() == "input folder":
+        folder_state = prediction_frame.prediction("./user/input", unique_labels, model)
+        if folder_state == "empty":
+            predict_label["text"] = "Input folder appears to be empty..."
+            save_buttons_state(button_list)
+            navigation_frame.deactivate()
+        else:
+            predict_label["text"] = "Predictions are ready!"
+            save_buttons_state(button_list, save_method.get())
+            navigation_frame.deactivate()
+    elif input_source.lower() == "specific":
+        selected_mode = input_source_frame.selected_mode.get()
+        match selected_mode:
+            case "dir":
+                dir_path = input_source_frame.specific_directory.get()
+                folder_state = prediction_frame.prediction(dir_path, unique_labels, model)
+                if folder_state == "empty":
+                    predict_label["text"] = "Input folder appears to be empty..."
+                    save_buttons_state(button_list)
+                    navigation_frame.deactivate()
+                else:
+                    predict_label["text"] = "Predictions are ready!"
+                    save_buttons_state(button_list, save_method.get())
+                    navigation_frame.deactivate()
+            case "img":
+                temp_name = "local_image"
+                temp_path = f"./resources/images/temp"
+                image_path = input_source_frame.specific_file.get()
+                img = Image.open(image_path)
+                img.save(f"{temp_path}/{temp_name}.jpg")
+                prediction_frame.prediction(temp_path, unique_labels, model)
+                save_buttons_state(button_list, save_method.get())
+                navigation_frame.deactivate()
+                os.remove(f"{temp_path}/{temp_name}.jpg")
+                predict_label["text"] = "Predictions are ready!"
+            case _:
+                predict_label["text"] = "Select either directory or file"
+    elif input_source.lower() == "web image":
+        temp_name = "web_image"
+        temp_path = f"./resources/images/temp"
+        try:
+            image_url = input_source_frame.image_url.get()
+            img = Image.open(urlopen(image_url))
+            img.save(f"{temp_path}/{temp_name}.jpg")
+            prediction_frame.prediction(temp_path, unique_labels, model)
+            save_buttons_state(button_list, save_method.get())
+            navigation_frame.deactivate()
+            os.remove(f"{temp_path}/{temp_name}.jpg")
+            predict_label["text"] = "Predictions are ready!"
+        except:
+            predict_label["text"] = "Wrong URL or empty field..."
+    
     
 def manual_save(image, breed_label, accuracy, idx, manually_saved_idxs, manually_saved_texts, text_label, save_button):
+    """
+    This function takes a long list of arguments, we will discuss them shortly. It is a function that becomes avaialble 
+    if the user selected a 'manual' saving option and is performed when the manual save button is pressed. 
+    
+    Arguments:
+     - image - a matplotlib figure of the currently displayed prediction
+     - breed_label - a string od the predicted breed
+     - accuracy - the accuracy of the prediction
+     - idx - the idx of the displayed image
+     - manually_saved_idxs - a list that is stored by the NavigationFrame object
+     - manually_saved_texts - a dictionary that is stored by the NavigationFrame object
+     - text_label - a tk Label widget that will ask the user if they want to save and display the path
+     - save_button - a tk Button widget used for manual saving
+
+    This function happens when the manual save button is pressed. It saves the image to the './user/output' folder and 
+    appends the idx of the image to the 'manually_saved_idxs' list so that it can't be saved again in the current run.
+    Next, the 'manually_saved_texts' gets a key value pair that contains the path to the saved image, the path gets 
+    displayed and the save button gets disabled so that it can't be spammed.
+    """
     label_string = image_saver(image, breed_label, accuracy)
     manually_saved_idxs.append(idx)
     manually_saved_texts[idx] = label_string
