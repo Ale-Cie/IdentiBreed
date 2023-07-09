@@ -4,15 +4,17 @@ from pyautogui import size
 
 import PIL.Image
 import PIL.ImageTk
+import time
 from tkinter import *
 from tkinter import ttk
 
 
 unique_labels = model_funcs.unique_labels_maker("./data/labels.csv")
 identibreed = model_funcs.load_model("./models/20230511-14531683809630-full-image-set-MobileNetV2-Adam-v2.h5")
+app_version = "0.3.0"
 
 root = Tk()
-root.title("IdentiBreed v. 0.2.0")
+root.title(f"IdentiBreed v. {app_version}")
 root.iconbitmap("./resources/images/AppIcon.icns")
 
 # Variables
@@ -20,6 +22,7 @@ save_method = StringVar()
 width, height = size()
 width_multiplier = int(width)/1440
 height_multiplier = int(height)/900
+config_dict = app_funcs.config_reader(app_version)
 
 # Frames
 mainframe = ttk.Frame(root,width=1090, height=900)
@@ -31,8 +34,9 @@ save_method_frame = LabelFrame(sidebar, text="Select Save Method")
 prediction_frame = app_classes.PredictionImage(display)
 navigation_frame = app_classes.NavigationFrame(sidebar, prediction_frame)
 
+
 # Test Button - Use only when experimenting with new functions!!
-# test_button = ttk.Button(sidebar, text="Test", command=lambda: print(input_source_frame.notebook.tab(input_source_frame.notebook.select(), "text")))
+# test_button = ttk.Button(sidebar, text="Test", command=lambda: print(navigation_frame.evaluation_frame.log_file))
 # test_button.grid(column=7, row=0)
 
 # Widgets
@@ -47,7 +51,7 @@ save_separator = ttk.Separator(save_method_frame, orient="horizontal")
 output_folder_label = ttk.Label(save_method_frame, text="Saved Images Directory")
 output_folder_label["anchor"] = "center"
 output_folder = ttk.Button(save_method_frame, text="Output Folder", width=10, command=lambda: app_funcs.open_directory("output"))
-predict_button = ttk.Button(make_predictions_frame, text="Make Predictions", command=lambda: app_funcs.predict_button_command(input_source_frame, save_method, prediction_frame, unique_labels, identibreed, predict_label, [save_all_button, save_none_button, save_manually_button], navigation_frame))
+predict_button = ttk.Button(make_predictions_frame, text="Make Predictions", default="active", command=lambda: app_funcs.predict_button_command(input_source_frame, save_method, prediction_frame, unique_labels, identibreed, predict_label, [save_all_button, save_none_button, save_manually_button], navigation_frame, sidebar, app_version))
 
 # Grid settings
 mainframe.grid(column=0, row=0, sticky=(N, S, E, W))
@@ -55,7 +59,7 @@ display.grid(column=0, row=0, columnspan=2)
 sidebar.grid(column=0, row=1, columnspan=2)
 input_source_frame.grid(column=0, row=0, sticky=(N,S,E,W))
 make_predictions_frame.grid(column=1, row=0, columnspan=3, sticky=(N, S, E, W))
-navigation_frame.grid(column=0, row=2, columnspan=6, sticky=(N, S, E, W))
+navigation_frame.grid(column=0, row=2, columnspan=2, sticky=(N, S, E, W))
 prediction_frame.grid(column=0, row=0, columnspan=3, rowspan=2, sticky=(N, S, E, W))
 predict_label.grid(column=0, row=0, columnspan= 3, sticky=(N,S,E,W))
 predict_button.grid(column=0, row=1, columnspan=3, sticky=(N,S,E,W))
@@ -67,6 +71,8 @@ save_manually_button.grid(column= 2, row= 1, sticky=(N,S,E,W))
 output_folder_label.grid(column=4, row=0, sticky=(N,S,E,W))
 save_separator.grid(column=3, row=0, rowspan=2, sticky=(N,S,E,W))
 output_folder.grid(column=4, row=1, sticky=(N,S,E,W))
+
+
 
 # Column & row configure settings
 root.columnconfigure(0, weight=1)
@@ -86,21 +92,19 @@ navigation_frame.columnconfigure(1, weight=3)
 navigation_frame.columnconfigure(2, weight=3)
 prediction_frame.columnconfigure(0, weight=3)
 
-for child in mainframe.winfo_children(): 
-    child.grid_configure(padx=5, pady=5)
-for child in sidebar.winfo_children(): 
-    child.grid_configure(padx=2, pady=2)
-for child in make_predictions_frame.winfo_children(): 
-    child.grid_configure(padx=5, pady=15)
-for child in save_method_frame.winfo_children():
-    child.grid_configure(padx=4, pady=2)
-for child in navigation_frame.winfo_children(): 
-    child.grid_configure(padx=5, pady=2)    
-for child in display.winfo_children(): 
-    child.grid_configure(padx=5, pady=5)
+frames = [mainframe, sidebar, make_predictions_frame, save_method_frame, navigation_frame]
+for frame in frames:
+    if frame == make_predictions_frame:
+        for child in frame.winfo_children():
+            child.grid_configure(padx=3, pady=15)
+    else:
+        for child in frame.winfo_children():
+            child.grid_configure(padx=3, pady=2)
 
 root.minsize(width=int(round(1090*width_multiplier)), height=int(round(450*height_multiplier)))
 root.maxsize(width=int(round(1090*width_multiplier)), height=int(round(900*height_multiplier)))
 
 root.mainloop()
+
+
 

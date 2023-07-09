@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 import subprocess
+import random, string
 
-from resources import model_funcs
+from resources import model_funcs, app_classes
 
 from IPython.display import Image
 from PIL import Image
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from urllib.request import urlopen
 
 
@@ -26,7 +27,7 @@ def predict_user_images(file_paths, unique_labels, model):
     """
 
     # Instantiating empty lists for image paths and image dictionaries
-    dir_list, predicted_files = [], []
+    dir_list, predicted_files, image_arrays = [], [], []
     folder_state = "empty"
     print("Predicting dog breeds from images in './images' folder.")
     print("This could take a moment...")
@@ -55,13 +56,16 @@ def predict_user_images(file_paths, unique_labels, model):
             # We append the dictionary to the list and an image file path into another list
             predicted_files.append(pred_dict)
             dir_list.append(img_path)
+            image_file = Image.open(img_path)
+            image_file.load()
+            image_arrays.append(np.asarray(image_file, dtype="int32"))
             folder_state = "filled"
         except:
             pass
         # return_list = [dir_list, predicted_files]
     print("Predicting completed")
     # return return_list
-    return dir_list, predicted_files, folder_state
+    return dir_list, predicted_files, image_arrays, folder_state
 
 def image_saver(image, breed_label, accuracy= None, data_expansion= False, prefix= None):
     """
@@ -278,6 +282,8 @@ def save_buttons_state(save_buttons, save_method=""):
     else:
         for button in save_buttons:
             button.state(["disabled"])
+        
+            
     
 def save_button_command(save_method, method, width_multiplier, height_multiplier, button_list, prediction_frame, navigation_frame, predict_label):
     """
@@ -304,8 +310,11 @@ def save_button_command(save_method, method, width_multiplier, height_multiplier
     prediction_frame.display(prediction_frame.predicted_list, save_method.get(), width_multiplier, height_multiplier), 
     navigation_frame.activate(save_method.get(), width_multiplier, height_multiplier, len(prediction_frame.predicted_list), prediction_frame.label_string)
     predict_label["text"] = "Ready to make new predictions!"
+  
 
-def predict_button_command(input_source_frame, save_method, prediction_frame, unique_labels, model, predict_label, button_list, navigation_frame):
+
+
+def predict_button_command(input_source_frame, save_method, prediction_frame, unique_labels, model, predict_label, button_list, navigation_frame, sidebar, app_version):
     """
     This function takes a long list of arguments, we will discuss them shortly. It is a function that is performed, when the
     'predict_button' is pressed.
@@ -319,10 +328,35 @@ def predict_button_command(input_source_frame, save_method, prediction_frame, un
      - predict_label - a tk Label that will change it's value depending on the folder state or links viability 
      - button_list - a list of save buttons
      - navigation_frame - a NavigationFrame object
+     - sidebar - a tk Frame into which the PredictionEvaluation() object can be added.
 
     This function checks which input method has been selected, checks whether there are images to make predictions on
-    and if all goes right makes predictions and activates the save buttons. 
+    and if all goes right makes predictions and activates the save buttons. If the user wants to evaluate the 
+    predictions and give their feedback the evaluation frame is activated.
     """
+    config_dict = config_reader(app_version)
+    if config_dict["evaluation"] == "True":
+        navigation_frame.evaluation_frame = app_classes.PredictionEvaluation(sidebar, unique_labels, config_dict["user_id"], navigation_frame)
+    elif config_dict["evaluation"] == "False":
+        pass
+    else:
+        evaluation_bool = messagebox.askyesno(
+            title="Help IdentiBreed improve",
+            message="""IdentiBreed is a one-man, open-source, passion project.
+            \nIt's further development requires feedback from users. 
+            \nWould you like to help me improve the app by evaluating and sharing the predictions?""",
+            icon="question"
+        )
+        if evaluation_bool:
+            navigation_frame.evaluation_frame = app_classes.PredictionEvaluation(sidebar, unique_labels, config_dict["user_id"], navigation_frame)
+        else:
+            pass
+        config_dict["evaluation"] = evaluation_bool
+        with open("./resources/config.ini", "w") as file:
+            for key, value in config_dict.items():
+                file.writelines(f"{key}:{value}\n")
+        file.close()
+
     save_method.set("n/a")
     input_source = input_source_frame.notebook.tab(input_source_frame.notebook.select(), "text")
     if input_source.lower() == "input folder":
@@ -404,3 +438,21 @@ def manual_save(image, breed_label, accuracy, idx, manually_saved_idxs, manually
     text_label["text"] = label_string
     save_button.state(["disabled"])
     
+def config_reader(app_version):
+    config_dict = {}
+    
+    try:
+        with open("./resources/config.ini", "r+") as file:
+            for line in file.readlines():
+                key, value = line.replace("\n", "").split(":")
+                config_dict[key] = value
+        file.close()
+    except:
+        user_id = "".join(random.choices(string.ascii_letters + string.digits, k=16))
+        with open("./resources/config.ini", "a+") as file:
+            file.writelines(f"app_version:{app_version}"+ f"user_id:{user_id}\n" + "evaluation:n/a\n")
+        file.close()
+        config_dict["user_id"] = user_id
+        config_dict["evaluation"] = "n/a"
+
+    return config_dict

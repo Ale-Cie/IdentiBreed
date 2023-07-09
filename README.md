@@ -32,6 +32,14 @@ I set out to create a model using a network imported from TensorFlow Hub. I deci
 
 Inital model has been completed a long time ago (some time in April) and then I set out to expand on the project.
 
+<i>-- 09.07.2023 version 0.3.0 --</i>
+
+Another big leap in apps features. This month (!!!) I've added a whole new experience - upon first activation of the app a config.ini file is created. It contains the current `app_version`, `user_id` (randomly generated 16 character long alphanumeric string) and a boolean `evaluation`. What does that one mean? Well it's a neat new feature that I wanted to do for a long time now. What also happens at the first run of the app shapes how the user will interact with the app - before the predictions are displayed a one time pop-up message appears, asking the user if they want to contribute to the expansion of the IdentiBreed AI! If the user agrees they have to evaluate each prediction - if it was correct, incorrect of if they don't know themselves. After all predictions are done, the evaluation log gets saved onto the users computer and they can then submit it on <a href="https://aleksanderc.pythonanywhere.com/identibreed.html#upload_logs">IdentiBreed's page</a> in my portfolio.
+
+If you want to learn more about this new evaluation feature please refer to project's page on my <a href="https://aleksanderc.pythonanywhere.com">personal portfolio</a>. You can find IdentiBreed in the `Projects` subpage.
+
+Next minor goal is adding a settings page, so that users can easily change the evaluation setting and maybe adjust such settings as the plots dpi, resolution etc.
+
 <i>-- 18.06.2023 version 0.2.0 --</i>
 
 Can I call this version 0.2.0? I mean it's my own project and I guess I can do what I want...
@@ -69,19 +77,17 @@ The repostiory was updated with this new notebook `Identifyin_User_Images.ipynb`
 
 ## What's next?
 
-Three boxes down, one new and four old ones to go...
+Four boxes down, no new ones and just four to go...
 
-From now on I will focus on expanding the app with few more controls. I want to make the user evaluate the breeds in the same way as in the `Identifying_User_Images.ipynb`. This will require a `LabelFrame` with about three or four buttons and a combobox. I played around a bit with a possible UI, so implementation won't take very long.
+Next step as mentioned above is adding a settings page to the app. After that I will probably focus on creating a web version of IdentiBreed. This will hopefully make it easier for me to gather user evaluations. This way expansion of the dataset won't only rely on me scraping the net for pictures...
 
-Next up I will have to consider expanding the training dataset, since it's missing some dog breeds (for instance the internet staple - the Doge itself - both 'shiba' and 'akita' breeds).
-
-That's as far as my goals stretch for now. Another goal I can consider is putting the model up on my portfolio website, as a web accessible breed identifier. And some more things like streamlining the notebooks, creating a new iteration of IdentiBreed that's from the ground up mine etc.
+Somewhere along the line - streamlining the notebooks, rebuilding the model from ground up (It will be hopefully easier with an expanded dataset).
 
 So to sum up the goals (present and future):
 <br /> ✅ Create the first iteration of IdentiBreed
 <br /> ✅ Prepare model to make predictions on user submitted pictures
 <br /> ✅ Put the model and most of the obligatory functions into a windowed app
-<br /> ◽️ Add prediction evaluation and dataset expansion
+<br /> ✅ Add prediction evaluation and dataset expansion
 <br /> ◽️ Expand the training dataset with missing dog breeds
 <br /> ◽️ Make the model web accessible
 <br /> ◽️ Streamline the notebooks

@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
-
+import pandas  as pd
+import datetime
+import webbrowser
+import os
 from resources import app_funcs
 
 from tkinter import *
 from tkinter import ttk, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from PIL import Image
 
 class PredictionImage(Label):
     def __init__(self, parent):
@@ -34,6 +38,7 @@ class PredictionImage(Label):
         Returns 'label_string' - a string that is either empty or contains the path to saved image. 
         The 'label_string' can be used to display the path details in the navigation bar.
         """
+        
         self.figure, self.axs = plt.subplots(1, 2)
         self.label_string = ""
         self.figure, self.breed, self.accuracy = app_funcs.show_user_images(predicted_list, self.figure, self.axs, width_multiplier, height_multiplier, idx)
@@ -61,7 +66,7 @@ class PredictionImage(Label):
         Returns 'folder_state' - string either 'empty' or 'filled', that is used to prevent app from crashing in case the user
         provided incorrect or empty path/url.
         """
-        self.dir_list, self.predicted_list, folder_state = app_funcs.predict_user_images(file_paths, unique_labels, model)
+        self.dir_list, self.predicted_list, self.image_arrays, folder_state = app_funcs.predict_user_images(file_paths, unique_labels, model)
         self.saved_idxs = []
         self.saved_label_texts = []
 
@@ -104,16 +109,15 @@ class NavigationFrame(LabelFrame):
         self.parent = parent
         self.idx = 0
         self.y = 0
+        self.evaluation_frame = False
         self.prediction_frame = prediction_frame
-        self.previous = ttk.Button(self, text="< Prev", command=lambda: self.previous_image(prediction_frame))
+        self.previous = ttk.Button(self, text="< Prev", command=lambda: self.previous_image(prediction_frame), state="disabled")
         self.previous.grid(column=0, row=0, sticky=(N,S,E,W))
-        self.previous.state(["disabled"])
         self.counter = ttk.Label(self, text= f"{x}/{y}")
         self.counter["anchor"] = "center"
         self.counter.grid(column=1, row=0, sticky=(N,S,E,W))
-        self.next = ttk.Button(self, text= "Next >", command=lambda: self.next_image(prediction_frame))
+        self.next = ttk.Button(self, text= "Next >", command=lambda: self.next_image(prediction_frame), state="disabled")
         self.next.grid(column=2, row=0, sticky=(N,S,E,W))
-        self.next.state(["disabled"])
         self.columnconfigure(0, weight=3)
         self.columnconfigure(1, weight=3)
         self.columnconfigure(2, weight=3)
@@ -125,13 +129,17 @@ class NavigationFrame(LabelFrame):
         predictions made and the 'label_string'. The 'label_string' is a string obtained from the PredictionImage object.
         It set to an empty string by default, but it has to be specified earlier in order to display the predicted path.
         """
+        try:
+            self.evaluation_frame.activate(self.prediction_frame.image_arrays, self.prediction_frame.predicted_list)
+        except:
+            self.disable_buttons()
         self.width_multiplier = width_multiplier
         self.height_multiplier = height_multiplier
-        self.idx = 1
+        self.idx = 0
         self.y = y
-        self.counter["text"] = f"{self.idx}/{self.y}"
-        if self.y != 1:
-            self.next.state(["!disabled"])
+        self.counter["text"] = f"{self.idx+1}/{self.y}"
+        if self.y == 1:
+            self.next.state(["disabled"])
         self.save_method = save_method
         if save_method != "none":
             self.text_label = ttk.Label(self, text=label_string)
@@ -145,6 +153,7 @@ class NavigationFrame(LabelFrame):
             self.manually_saved_idxs = []
             self.manually_saved_texts = {}
             self.text_label["text"] = "Would you like to save this image?"
+        
 
     def deactivate(self):
         """
@@ -169,8 +178,14 @@ class NavigationFrame(LabelFrame):
         or will print the path to the saved image under the controls.
         It also handles the behaviour of the 'next' and 'previous' buttons, depending on the idx of displayed image.
         """
-        label_string = prediction_frame.display(prediction_frame.predicted_list, self.save_method, self.width_multiplier, self.height_multiplier, idx=self.idx)
         self.idx += 1
+        try:
+            self.evaluation_frame.evaluate(self.prediction_frame.image_arrays, self.prediction_frame.predicted_list, self.idx)
+        except:
+            pass
+        label_string = prediction_frame.display(prediction_frame.predicted_list, self.save_method, self.width_multiplier, self.height_multiplier, idx=self.idx)
+        
+        
         if self.save_method == "manual":
             if self.idx not in self.manually_saved_idxs:
                 self.text_label["text"] = "Would you like to save this image?"
@@ -180,16 +195,11 @@ class NavigationFrame(LabelFrame):
                 self.save_button.state(["disabled"])
         elif self.save_method == "all":
             self.text_label["text"] = label_string
-        if self.idx == 1:
-            self.previous.state(["disabled"])
-        elif self.idx == 2:
-            self.previous.state(["!disabled"])
-        elif self.idx == self.y:
-            self.next.state(["disabled"])
-        else:
-            self.next.state(["!disabled"])
-            self.previous.state(["!disabled"])
-        self.counter["text"] = f"{self.idx}/{self.y}"
+        if not self.evaluation_frame:
+            self.disable_buttons()
+        else: 
+            pass
+        self.counter["text"] = f"{self.idx+1}/{self.y}"
         
 
     def previous_image(self, prediction_frame):
@@ -202,7 +212,12 @@ class NavigationFrame(LabelFrame):
         It also handles the behaviour of the 'next' and 'previous' buttons, depending on the idx of displayed image.
         """
         self.idx -= 1
-        label_string = prediction_frame.display(prediction_frame.predicted_list, self.save_method, self.width_multiplier, self.height_multiplier, idx=self.idx-1)
+        try:
+            self.evaluation_frame.evaluate(self.prediction_frame.image_arrays, self.prediction_frame.predicted_list, self.idx)
+        except:
+            pass
+        
+        label_string = prediction_frame.display(prediction_frame.predicted_list, self.save_method, self.width_multiplier, self.height_multiplier, idx=self.idx)
         if self.save_method == "manual":
             if self.idx not in self.manually_saved_idxs:
                 self.text_label["text"] = "Would you like to save this image?"
@@ -212,17 +227,25 @@ class NavigationFrame(LabelFrame):
                 self.save_button.state(["disabled"])
         elif self.save_method == "all":
             self.text_label["text"] = label_string
-
-        if self.idx == 1:
-            self.previous.state(["disabled"])
-        elif self.idx == 2:
-            self.previous.state(["!disabled"])
-        elif self.idx == self.y:
-            self.next.state(["disabled"])
+        if not self.evaluation_frame:
+            self.disable_buttons()
         else:
+            pass
+        self.counter["text"] = f"{self.idx+1}/{self.y}"
+
+    def disable_buttons(self):
+        if self.idx+1 == self.y:
+            if self.y != 1:
+                self.previous.state(["!disabled"])
+            else:
+                self.previous.state(["disabled"])
+            self.next.state(["disabled"])
+        elif self.idx == 0:
             self.next.state(["!disabled"])
+            self.previous.state(["disabled"])
+        elif self.idx != 0:
             self.previous.state(["!disabled"])
-        self.counter["text"] = f"{self.idx}/{self.y}"
+            self.next.state(["!disabled"])
 
 class InputSource(LabelFrame):
     """
@@ -232,11 +255,12 @@ class InputSource(LabelFrame):
     def __init__(self, parent):
         LabelFrame.__init__(self, parent, text="Input Options")
         self.notebook = ttk.Notebook(self)
-        self.notebook.grid(column=0, row=0)
+        self.notebook.grid(column=0, row=0, sticky=(N,S,E,W))
         self.input_source = StringVar()
         self.input_frame(self.notebook)
         self.specific_frame(self.notebook)
         self.web_image(self.notebook)
+        self.columnconfigure(0, weight=3)
         
     def input_frame(self, notebook):
         """
@@ -312,3 +336,143 @@ class InputSource(LabelFrame):
         for child in web_image_frame.winfo_children():
             child.grid_configure(padx=2, pady=2)
         notebook.add(web_image_frame, text="Web Image")
+
+class PredictionEvaluation(LabelFrame):
+    def __init__(self, parent, unique_labels, user_id, navigation_frame):
+        breed_list = []
+        for breed in unique_labels:
+            breed_list.append(breed.replace("_", " "))
+        LabelFrame.__init__(self, parent, text="Prediction Evaluation", width=200)
+        self.user_id = user_id
+        self.question_label = ttk.Label(self, text="Was my prediction correct?")
+        self.question_label["anchor"] = "center"
+        self.question_label.grid(column=0, row=0, columnspan=3, sticky=(N,S,E,W))
+        self.yes_button = ttk.Button(self, text="Yes", state="disabled", command=lambda: self.breed_correct(self.idx, self.log_name, self.image_array, self.breed_label))
+        self.yes_button.grid(column=0, row=1, sticky=(N,S,E,W))
+        self.no_button = ttk.Button(self, text="No", state="disabled", command=lambda: self.breed_incorrect())
+        self.no_button.grid(column=1, row=1, sticky=(N,S,E,W))
+        self.not_known_button = ttk.Button(self, text="Don't know", state="disabled", command=lambda: self.breed_not_known(self.idx, self.log_name, self.image_array))
+        self.not_known_button.grid(column=0, row=2, columnspan=2, sticky=(N,S,E,W))
+        self.breed_specify = ttk.Label(self, text="Please select the correct breed. \nIf missing, please type the correct breed below:", state="disabled")
+        self.breed_specify["anchor"] = "center"
+        self.breed_specify.grid(column=0, row=3, columnspan=2, sticky=(N,S,E,W))
+        self.breed_var = StringVar()
+        self.breed_combobox = ttk.Combobox(self, textvariable=self.breed_var, state="disabled")
+        self.breed_combobox["values"] = breed_list
+        self.breed_combobox.grid(column=0, row=4, columnspan=2,sticky=(N,S,E,W))
+        self.save_button = ttk.Button(self, text="Done", state="disabled", command=lambda: self.save_users_input(self.idx, self.log_name, self.image_array))
+        self.save_button.grid(column=0, row=5, columnspan=2, sticky=(N,S,E,W))
+        self.navigation_frame = navigation_frame
+        self.evaluated_idxs = []
+        self.columnconfigure(0, weight=3)
+        self.columnconfigure(1, weight=3)
+        self.columnconfigure(2, weight=3)
+        self.grid(column= 4, row= 0, rowspan= 3, sticky= (N,S,E,W))
+        for child in self.winfo_children():
+            child.grid_configure(padx=3, pady=5)
+
+    def activate(self, image_arrays, predicted_list):
+        self.yes_button.state(["!disabled"])
+        self.no_button.state(["!disabled"])
+        self.not_known_button.state(["!disabled"])
+        date_data = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.log_name = f"{self.user_id}_{date_data}_log"
+        self.log_file = pd.DataFrame(columns=["file_name", "image_array", "breed", "correct_prediction"])
+        self.evaluate(image_arrays, predicted_list)
+
+    def activate_commands(self):
+        self.question_label.state(["!disabled"])
+        self.yes_button.state(["!disabled"])
+        self.no_button.state(["!disabled"])
+        self.not_known_button.state(["!disabled"])
+        
+    def evaluate(self, image_arrays, predicted_list, idx=0):
+        self.navigation_controls(idx, "initial")
+        if idx not in self.evaluated_idxs:
+            self.navigation_frame.next.state(["disabled"])
+            # self.navigation_frame.previous.state(["disabled"])
+            self.image_array = image_arrays[idx]
+            self.breed_label = predicted_list[idx]["prediction"]
+            self.idx = idx
+            self.activate_commands()
+        else:
+            self.evaluated_breed()
+            
+        
+    def breed_correct(self, idx, log_name, image_array, breed_label):
+        self.evaluated_idxs.append(idx)
+        self.log_file.loc[idx] = [f"{log_name}_{idx}", image_array, breed_label, 1]
+        self.evaluated_breed()
+        self.navigation_controls(idx)
+        try:
+            self.navigation_frame.next_image(self.navigation_frame.prediction_frame)
+        except:
+            print("All displayed")
+        
+    def breed_incorrect(self):
+        self.breed_specify.state(["!disabled"])
+        self.breed_combobox.state(["!disabled"])
+        self.save_button.state(["!disabled"])
+        self.question_label.state(["disabled"])
+        self.yes_button.state(["disabled"])
+        self.no_button.state(["disabled"])
+        self.not_known_button.state(["disabled"])
+
+    def save_users_input(self, idx, log_name, image_array):
+        if self.breed_var.get().replace(" ", "") != "":
+            user_breed = "US_" + self.breed_var.get().replace(" ", "_").lower()
+            self.evaluated_idxs.append(idx)
+            self.log_file.loc[idx] = [f"{log_name}_{idx}", image_array, user_breed, 0]
+            self.evaluated_breed()
+            self.navigation_controls(idx)
+            try:
+                self.navigation_frame.next_image(self.navigation_frame.prediction_frame)
+            except:
+                print("All displayed")
+            self.breed_combobox.set(value="")
+        else:
+            ttk.Label(self, text="Please specify a breed").grid(column=0, row=6, columnspan=2, sticky=(N,S,E,W))
+
+    def breed_not_known(self, idx, log_name, image_array):
+        self.evaluated_idxs.append(idx)
+        self.log_file.loc[idx] = [f"{log_name}_{idx}", image_array, "unknown", None]
+        self.evaluated_breed()
+        self.navigation_controls(idx)
+        try:
+            self.navigation_frame.next_image(self.navigation_frame.prediction_frame)
+        except:
+            print("All displayed")
+
+    def evaluated_breed(self):
+        self.question_label.state(["disabled"])
+        self.yes_button.state(["disabled"])
+        self.no_button.state(["disabled"])
+        self.not_known_button.state(["disabled"])
+        self.breed_specify.state(["disabled"])
+        self.breed_combobox.state(["disabled"])
+        self.save_button.state(["disabled"])
+    
+    def navigation_controls(self, idx, tag="non_initial"):
+        if idx+1 == self.navigation_frame.y:
+            if self.navigation_frame.y != 1:
+                self.navigation_frame.previous.state(["!disabled"])
+            else:
+                self.navigation_frame.previous.state(["disabled"])
+            self.navigation_frame.next.state(["disabled"])
+            if tag == "non_initial":
+                self.upload_button = ttk.Button(self, text="Upload log file", default="active", command=lambda: self.upload_log())
+                self.upload_button.grid(column=0, row=6, columnspan=2, sticky=(N,S,E,W))
+        elif idx == 0:
+            self.navigation_frame.next.state(["!disabled"])
+            self.navigation_frame.previous.state(["disabled"])
+        elif idx != 0:
+            self.navigation_frame.previous.state(["!disabled"])
+            self.navigation_frame.next.state(["!disabled"])
+    
+    def upload_log(self):
+        if f"{self.log_name}.csv" not in os.listdir("./user/evaluation_logs"):
+            self.log_file.to_csv(f"./user/evaluation_logs/{self.log_name}.csv", index=False)
+        else:
+            pass
+        webbrowser.open("https://aleksanderc.pythonanywhere.com/identibreed.html#upload_logs", new=0, autoraise=True)
+        

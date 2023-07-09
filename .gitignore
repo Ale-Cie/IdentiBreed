@@ -4,12 +4,16 @@ data/train/*
 data/user_submissions/*
 user/input/*
 user/output/*
+user/evaluation_logs/*
+resources/config.ini
+resources/__pycache__
 
 !data/test/test.txt
 !data/train/train.txt
 !data/user_submissions/user_submissions.txt
 !user/input/input.txt
 !user/output/output.txt
+!user/evaluation_logs/evaluation_logs.txt
 
 # Ignored files
 .DS_Store
