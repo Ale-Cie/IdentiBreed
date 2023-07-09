@@ -6,7 +6,7 @@ user/input/*
 user/output/*
 user/evaluation_logs/*
 resources/config.ini
-resources/__pycache__
+
 
 !data/test/test.txt
 !data/train/train.txt
